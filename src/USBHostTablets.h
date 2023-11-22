@@ -6,7 +6,7 @@
 #include "USBHostHIDParser.h"
 
 #include "USBHost/USBHost.h"
-#include "IUSBEnumeratorEx.h"
+#include "IUSBEnumeratorEX.h"
 
 
 
