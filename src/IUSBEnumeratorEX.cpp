@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "IUSBEnumeratorEx.h"
+#include "IUSBEnumeratorEX.h"
 #include <LibPrintf.h>
 #include <MemoryHexDump.h>
 #include <GIGA_digitalWriteFast.h>
