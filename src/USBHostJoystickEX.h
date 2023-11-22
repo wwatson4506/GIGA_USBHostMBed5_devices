@@ -26,7 +26,7 @@
 #include "USBHostHIDParser.h"
 
 #include "USBHost/USBHost.h"
-#include "IUSBEnumeratorEx.h"
+#include "IUSBEnumeratorEX.h"
 
 /**
  * A class to communicate a USB Joystick
