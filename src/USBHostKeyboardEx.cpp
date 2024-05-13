@@ -222,8 +222,10 @@ bool USBHostKeyboardEx::connect() {
   }
   host = USBHost::getHostInst();
 
+  USB_INFO("USBHostKeyboardEx::connect called: %p", this);
   for (uint8_t i = 0; i < MAX_DEVICE_CONNECTED; i++) {
     if ((dev = host->getDevice(i)) != NULL) {
+      USB_INFO("dev(%u) %p", i, dev);
 
       int ret = host->enumerate(dev, this);
       if (ret) {

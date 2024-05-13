@@ -81,6 +81,11 @@ void setup() {
     ;  // wait for Arduino Serial Monitor
   Serial.println("\nUSB Host Keyboard viewer");
 
+  pinMode(2, OUTPUT);
+  digitalWrite(2, LOW);
+  pinMode(3, OUTPUT);
+  digitalWrite(3, LOW);
+
   keyboard1.attachRawPress(OnRawPress);
   keyboard1.attachRawRelease(OnRawRelease);
   keyboard1.attachHIDPress(OnHIDExtrasPress);
@@ -136,14 +141,14 @@ void UpdateActiveDeviceInfo() {
 
   if (keyboard1_was_connected) {
     if (!keyboard1.connected()) {
-      Serial.println("*** Tablet disconnected ***");
+      Serial.println("*** keyboard disconnected ***");
       keyboard1_was_connected = false;
     }
   } else {
     if (keyboard1.connect()) {
       keyboard1_was_connected = true;
 
-      Serial.print("*** Device Tablet ");
+      Serial.print("*** Device keyboard ");
       Serial.print(keyboard1.idVendor(), HEX);
       Serial.print(":");
       Serial.print(keyboard1.idProduct(), HEX);
@@ -152,7 +157,7 @@ void UpdateActiveDeviceInfo() {
       tft.setCursor(0, 0);
       tft.setTextColor(YELLOW);
       tft.setFont(Arial_12);
-      tft.print("Device Tablet ");
+      tft.print("Device keyboard ");
       tft.print(keyboard1.idVendor(), HEX);
       tft.print(":");
       tft.print(keyboard1.idProduct(), HEX);

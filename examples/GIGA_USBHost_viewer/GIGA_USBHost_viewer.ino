@@ -19,6 +19,7 @@
 //=============================================================================
 //#define USE_ST77XX // define this if you wish to use one of these displays.
 #include <Arduino_USBHostMbed5.h>
+#include <USBHostHub/USBHostHub.h>
 #include <USBHostMouseEx.h>
 #include <USBHostKeyboardEx.h>
 
@@ -49,6 +50,7 @@ ILI9341_GIGA_n tft(&SPI1, TFT_CS, TFT_DC, TFT_RST);
 //=============================================================================
 // USB Host Objects
 //=============================================================================
+USBHostHub hub;
 USBHostMouseEx mouse;
 USBHostKeyboardEx kbd;
 
@@ -108,6 +110,11 @@ void setup() {
   // device like wireless mouse and keyboard this can cause mouse problems.
   //keyboard1.forceBootProtocol();
 
+  pinMode(PA_15, OUTPUT);
+  digitalWrite(PA_15, HIGH);
+  delay(500);
+
+  
   tft.begin();
   // explicitly set the frame buffer
   //  tft.setFrameBuffer(frame_buffer);
@@ -153,6 +160,10 @@ void loop() {
 void UpdateActiveDeviceInfo() {
   // First see if any high level devices
   bool new_device_detected = false;
+
+  //if (!hub.connected()) {
+  //  hub.connect();
+  //}
 
   // only handle one at a time.
   if (!kbd_was_connected) {
