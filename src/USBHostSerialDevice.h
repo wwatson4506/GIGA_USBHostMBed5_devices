@@ -73,6 +73,11 @@ public:
   bool setDTR(bool fSet);
   bool setRTS(bool fSet);
 
+  bool setDTRRTS(bool fsetDTR, bool fSetRTS);
+
+  // value 0-3 bit 0x1 is DTR bit 0x2 is RTS
+  bool setDTRRTS(uint8_t dtr_rts);
+
   uint16_t idVendor() { return (dev != nullptr) ? dev->getVid() : 0; }
   uint16_t idProduct() { return (dev != nullptr) ? dev->getPid() : 0; }
   bool manufacturer(uint8_t *buffer, size_t len);

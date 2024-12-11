@@ -16,7 +16,7 @@ void setup() {
   Serial.begin(115200);
   while (!Serial && millis() < 5000) {}
 
-  Serial.println("Starting USB host Serial device test...");
+  Serial.println("\nStarting USB host Serial device test...");
 
   // Enable the USBHost
   pinMode(PA_15, OUTPUT);
@@ -92,11 +92,19 @@ void loop() {
     int cb = min(cbAvail, min(cbAvailForWrite, (int)sizeof(copy_buffer)));
     int cbRead = Serial.readBytes(copy_buffer, cb);
     //printf("S(%d)->HS(%d): %u %u\n\r", cbAvail, cbAvailForWrite, cb, cbRead);
-    if (cbRead > 0) {
+
+    // Hack time, if first 3 characters are $$<0-3) try setting DTRRTS...
+    if ((cbRead >= 3) && (copy_buffer[0] == '$') && (copy_buffer[1] == '$') &&
+       (copy_buffer[2] >= '0') && (copy_buffer[2] <= '3')) {
+        printf("Setting DTRRTS=%c\n\r", copy_buffer[2]);
+        hser.setDTRRTS(copy_buffer[2] - '0');
+
+       }
+    else if (cbRead > 0) {
       hser.write(copy_buffer, cbRead);
-      //hser.flush();
     }
   }
+
   if ((cbAvail = hser.available())) {
     digitalToggleFast(LED_BLUE);
     cbAvailForWrite = max(Serial.availableForWrite(), Fix_Serial_avalableForWrite);

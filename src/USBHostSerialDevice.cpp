@@ -116,6 +116,9 @@ bool USBHostSerialDevice::connect() {
         size_bulk_in_ = bulk_in->getSize();
         size_bulk_out_ = bulk_out->getSize();
 
+        printf("bulk in:%p size: %u\n\r", bulk_in, size_bulk_in_);
+        printf("bulk out:%p size: %u\n\r", bulk_out, size_bulk_out_);
+
         bulk_in->attach(this, &USBHostSerialDevice::rxHandler);
         bulk_out->attach(this, &USBHostSerialDevice::txHandler);
         host->bulkRead(dev, bulk_in, rxUSBBuf_, size_bulk_in_, false);
@@ -202,7 +205,7 @@ void USBHostSerialDevice::rxHandler() {
 {
   // PL2303 nb:0, cl:255 isub:0 iprot:0
   USB_INFO("USBHostSerialDevice::parseInterface nb:%d, cl:%u isub:%u iprot:%u\n\r", intf_nb, intf_class, intf_subclass, intf_protocol);
-  //printf("USBHostSerialDevice::parseInterface nb:%d, cl:%u isub:%u iprot:%u\n\r", intf_nb, intf_class, intf_subclass, intf_protocol);
+  printf("USBHostSerialDevice::parseInterface nb:%d, cl:%u isub:%u iprot:%u\n\r", intf_nb, intf_class, intf_subclass, intf_protocol);
   if (sertype_ != UNKNOWN) {
     intf_SerialDevice = intf_nb;
     return true;
@@ -299,16 +302,18 @@ void USBHostSerialDevice::initPL2303(bool fConnect) {
 
     host->controlWrite(dev, 0x40, 1, 0, 1, nullptr, 0);  // 8
     host->controlWrite(dev, 0x40, 1, 1, 0, nullptr, 0);  // 9
-    host->controlWrite(dev, 0x40, 1, 2, 0x24, nullptr, 0); // 10
+    //host->controlWrite(dev, 0x40, 1, 2, 0x24, nullptr, 0); // 10
+    host->controlWrite(dev, 0x40, 1, 2, 0x44, nullptr, 0); // 10
+    //host->controlWrite(dev, 0x40, 1, 0x0606, 2, 0x44, nullptr, 0); // 10
 
     // USB host shield 2... does not output
-//    host->controlWrite(dev, 0x40, 1, 8, 0, nullptr, 0); // 11
-//    host->controlWrite(dev, 0x40, 1, 9, 0, nullptr, 0); // 12
-//    host->controlRead(dev, 0xA1, 0x21, 0, 0, setupdata, 7); // 13
-//  }
+    host->controlWrite(dev, 0x40, 1, 8, 0, nullptr, 0); // 11
+    host->controlWrite(dev, 0x40, 1, 9, 0, nullptr, 0); // 12
+    host->controlRead(dev, 0xA1, 0x21, 0, 0, setupdata, 7); // 13
+    MemoryHexDump(Serial, setupdata, 7, false, "baud/control before\n");
+  }
   // Now stuff common to connect and begin
 
-  MemoryHexDump(Serial, setupdata, 7, false, "baud/control before\n");
   // pending control bit &2
   setupdata[0] = (baudrate_) & 0xff;  // Setup baud rate 115200 - 0x1C200
   setupdata[1] = (baudrate_ >> 8) & 0xff;
@@ -331,14 +336,15 @@ void USBHostSerialDevice::initPL2303(bool fConnect) {
   // pending control 0x10
   // This sets the control lines (0x1=DTR, 0x2=RTS)
   //printf("PL2303: 0x21, 0x22, 0x3\n\r");
-  dtr_rts_ = 1;
+  dtr_rts_ = 3;
   //host->controlWrite(dev, 0x21, 0x22, 1, 0, nullptr, 0);
-  setDTR(1);
+  setDTR(true);
 
   // Only on connect?
-//  if (fConnect) {
-//    printf("PL2303: 0x21, 0x22, 0x3 again\n\r");
-//    host->controlWrite(dev, 0x21, 0x22, 1, 0, nullptr, 0);
+  if (fConnect) {
+    //printf("PL2303: 0x21, 0x22, 0x3 again\n\r");
+    //host->controlWrite(dev, 0x21, 0x22, 1, 0, nullptr, 0);
+    setDTR(true);
   }
 
 }
@@ -832,29 +838,7 @@ bool USBHostSerialDevice::setDTR(bool fSet)
   // NOT sure if we should check pending control and not allow it? OR???
   if (fSet) dtr_rts_ |= 1;
   else dtr_rts_ &= ~1;
-  printf("setDTR: %d %d\n\r", fSet, dtr_rts_);
-
-  switch (sertype_) {
-    default: 
-      return false; // Not sure how to do...
-    case PL2303:
-    case CDCACM: 
-      host->controlWrite(dev, 0x21, 0x22, dtr_rts_, 0, nullptr, 0);
-      break;
-    case FTDI: 
-      println("  >>FTDI");
-      // The high 8 is mask and low 8 is setting. 
-      host->controlWrite(dev, 0x40, 1, fSet? 0x0101 : 0x0100, 0, nullptr, 0);
-      break;
-    // not sure yet on these  
-    //case CH341: 
-    case CP210X: 
-      // DTR(1) RTS(2)
-      host->controlWrite(dev, 0x41, 7, fSet? 0x0101 : 0x0100, 0, nullptr, 0);
-      break;
-  }
-
-  return true;
+  return setDTRRTS(dtr_rts_);
 }
 
 
@@ -864,11 +848,22 @@ bool USBHostSerialDevice::setRTS(bool fSet)
   printf("setRTS: %d\n\r", fSet);
   if (fSet) dtr_rts_ |= 2;
   else dtr_rts_ &= ~2;
-  printf("setRTS: %d %d\n\r", fSet, dtr_rts_);
+  return setDTRRTS(dtr_rts_);
+}
+
+bool USBHostSerialDevice::setDTRRTS(bool fsetDTR, bool fSetRTS) {
+  uint8_t dtr_rts = fsetDTR? 1 : 0;
+  if (fsetDTR) dtr_rts |= 2;
+  return USBHostSerialDevice::setDTRRTS(dtr_rts);
+
+}
+
+// value 0-3 bit 0x1 is DTR bit 0x2 is RTS
+bool USBHostSerialDevice::setDTRRTS(uint8_t dtr_rts) {
+  printf("setDTRRTS: %d\n\r", dtr_rts);
+  dtr_rts_ = dtr_rts;
 
   if (!connected()) return false;
-  // NOT sure if we should check pending control and not allow it? OR???
-
   switch (sertype_) {
     default: 
       return false; // Not sure how to do...
@@ -879,15 +874,20 @@ bool USBHostSerialDevice::setRTS(bool fSet)
     case FTDI: 
       println("  >>FTDI");
       // The high 8 is mask and low 8 is setting. 
-      host->controlWrite(dev, 0x40, 1, fSet? 0x0202 : 0x0200, 0, nullptr, 0);
+      host->controlWrite(dev, 0x40, 1, (dtr_rts_ & 0x1)? 0x0101 : 0x0100, 0, nullptr, 0);
+      host->controlWrite(dev, 0x40, 1, (dtr_rts_ & 0x1)? 0x0202 : 0x0200, 0, nullptr, 0);
       break;
     // not sure yet on these  
     //case CH341: 
     case CP210X: 
       // DTR(1) RTS(2)
-      host->controlWrite(dev, 0x41, 7, fSet? 0x0202 : 0x0200, 0, nullptr, 0);
+      host->controlWrite(dev, 0x41, 7, (dtr_rts_ & 0x1)? 0x0101 : 0x0100, 0, nullptr, 0);
+      host->controlWrite(dev, 0x41, 7, (dtr_rts_ & 0x1)? 0x0202 : 0x0200, 0, nullptr, 0);
       break;
   }
 
   return true;
+
 }
+
+
