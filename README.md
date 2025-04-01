@@ -54,6 +54,11 @@ Currently from Github:
 MemoryHexDump - my library for dumping memory
 https://github.com/KurtE/MemoryHexDump
 
+GIGA_digitalWriteFast - is my version of a faster implemention for: digititalWriteFast,
+digitalReadFast, digitalToggleFast.  It is found in my grab bag GIGA github project, which
+has a few libraries, documents, and test programs:
+https://github.com/KurtE/Arduino_GIGA-stuff
+
 Timer library 
 This may be optional, without it may not have TX buffering
 
